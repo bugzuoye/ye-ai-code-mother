@@ -41,3 +41,11 @@ langchain4j:
       max-retries: 3
       log-requests: true
       log-responses: true
+    # 配置流式模型
+    streaming-chat-model:
+      base-url: https://api.deepseek.com
+      api-key: <Your API Key>
+      model-name: deepseek-chat
+      max-tokens: 8192
+      log-requests: true
+      log-responses: true
