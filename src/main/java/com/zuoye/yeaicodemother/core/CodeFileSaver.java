@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
  * @author: zhangjy
  * @create: 2025.11.19 17:22
  */
+@Deprecated
 public class CodeFileSaver {
 
     /**

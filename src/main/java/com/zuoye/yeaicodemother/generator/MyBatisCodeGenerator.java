@@ -10,20 +10,22 @@ import java.util.Map;
 public class MyBatisCodeGenerator {
 
     // 需要生成的表名
-    private static final String[] TABLE_NAMES = {"user"};
+    private static final String[] TABLE_NAMES = {"app"};
 
     public static void main(String[] args) {
         // 获取数据源信息
         Dict dict = YamlUtil.loadByPath("application.yml");
-        Map<String, Object> dataSourceConfig = dict.getByPath("datasource");
+        Map<String, Object> dataSourceConfig = dict.getByPath("spring.datasource");
         String url = String.valueOf(dataSourceConfig.get("url"));
         String username = String.valueOf(dataSourceConfig.get("username"));
         String password = String.valueOf(dataSourceConfig.get("password"));
+        String driverClassName = String.valueOf(dataSourceConfig.get("driver-class-name"));
         // 配置数据源
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setJdbcUrl(url);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
+        dataSource.setDriverClassName(driverClassName);
 
         // 创建配置内容
         GlobalConfig globalConfig = createGlobalConfig();

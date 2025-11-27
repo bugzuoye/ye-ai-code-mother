@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
  *
  * @author zhangjy
  */
+@Deprecated
 public class CodeParser {
 
     private static final Pattern HTML_CODE_PATTERN = Pattern.compile("```html\\s*[\\r\\n]+([\\s\\S]*?)```", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
