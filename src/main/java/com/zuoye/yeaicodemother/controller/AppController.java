@@ -2,6 +2,7 @@ package com.zuoye.yeaicodemother.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.zuoye.yeaicodemother.annotation.AuthCheck;
@@ -25,13 +26,18 @@ import com.zuoye.yeaicodemother.service.AppService;
 import com.zuoye.yeaicodemother.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
- *  控制层。
+ * 控制层。
  *
  * @author <a href="https://github.com/bugzuoye">作业</a>
  */
@@ -49,7 +55,7 @@ public class AppController {
      * 创建应用
      *
      * @param appAddRequest 创建应用请求
-     * @param request 请求对象
+     * @param request       请求对象
      * @return 应用id
      */
     @PostMapping("/add")
@@ -133,7 +139,7 @@ public class AppController {
     /**
      * 根据 id 获取应用详情
      *
-     * @param id      应用 id
+     * @param id 应用 id
      * @return 应用详情
      */
     @GetMapping("/get/vo")
@@ -278,6 +284,44 @@ public class AppController {
         ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR);
         // 获取封装类
         return ResultUtils.success(appService.getAppVO(app));
+    }
+
+    /**
+     * 应用聊天生成代码（流式 SSE）
+     *
+     * @param appId 应用 ID
+     * @param message 用户消息
+     * @param request 请求对象
+     * @return 生成结果流
+     */
+    @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId,
+                                      @RequestParam String message,
+                                      HttpServletRequest request) {
+        // 参数校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 无效");
+        ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "用户消息不能为空");
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        // 调用服务生成代码（流式）
+        Flux<String> contentFlux = appService.chatToGenCode(appId, message, loginUser);
+        // 解决空格丢失问题 转换为 ServerSentEvent 格式
+        return contentFlux
+                .map(chunk -> {
+            // 将内容包装成JSON 对象
+            Map<String, String> wrapper = Map.of("d", chunk);
+            String jsonData = JSONUtil.toJsonStr(wrapper);
+            return ServerSentEvent.<String>builder()
+                    .data(jsonData)
+                    .build();
+            })
+            .concatWith(Mono.just(
+                    // 发送结束时间
+                    ServerSentEvent.<String>builder()
+                            .event("done")
+                            .data("")
+                            .build()
+            ));
     }
 
 }
